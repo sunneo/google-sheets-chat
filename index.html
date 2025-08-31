@@ -1,42 +1,582 @@
+<!-- 20250901 01:19 -->
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>仿Teams的群組聊天室</title>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <link rel="stylesheet" href="style.css">
-    <script src="script.js"></script>
+    <title>Chat Room</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            display: flex;
+            height: 100vh;
+        }
+        #group-sidebar {
+            width: 250px;
+            background-color: #333;
+            color: #fff;
+            padding: 20px;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+        #group-sidebar h2 {
+            margin-top: 0;
+            font-size: 1.5em;
+            border-bottom: 2px solid #555;
+            padding-bottom: 10px;
+        }
+        #group-list {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+            flex-grow: 1;
+        }
+        #group-list li {
+            padding: 10px;
+            cursor: pointer;
+            border-bottom: 1px solid #444;
+            transition: background-color 0.3s;
+        }
+        #group-list li.active {
+            background-color: #555;
+            font-weight: bold;
+        }
+        #group-list li:hover {
+            background-color: #444;
+        }
+        #create-group-btn {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px;
+            border: none;
+            cursor: pointer;
+            text-align: center;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+        #main-chat-container {
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+            background-color: #fff;
+            border-left: 1px solid #ddd;
+        }
+        #chat-header {
+            background-color: #eee;
+            padding: 20px;
+            text-align: center;
+            font-size: 1.2em;
+            font-weight: bold;
+            border-bottom: 1px solid #ddd;
+        }
+        #chat-box {
+            flex-grow: 1;
+            padding: 20px;
+            overflow-y: auto;
+            border-bottom: 1px solid #ddd;
+        }
+        .message {
+            background-color: #e9e9e9;
+            padding: 10px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            word-wrap: break-word;
+        }
+        .message strong {
+            color: #333;
+        }
+        .message-time {
+            font-size: 0.8em;
+            color: #777;
+            margin-left: 10px;
+        }
+        .date-header {
+            text-align: center;
+            margin: 20px 0;
+            color: #999;
+            font-size: 0.9em;
+            position: relative;
+        }
+        .date-header::before, .date-header::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            width: 40%;
+            height: 1px;
+            background: #ddd;
+        }
+        .date-header::before { left: 0; }
+        .date-header::after { right: 0; }
+
+        #input-container {
+            display: flex;
+            flex-direction: column;
+            padding: 10px;
+            background-color: #f4f4f4;
+            border-top: 1px solid #ddd;
+        }
+        #input-row {
+            display: flex;
+            align-items: center;
+            width: 100%;
+        }
+        #progress-status {
+            text-align: center;
+            color: #555;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+            visibility: hidden;
+        }
+        #username, #message {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin-right: 10px;
+        }
+        #username {
+            width: 100px;
+        }
+        #message {
+            flex-grow: 1;
+        }
+        #send-button, #add-image-button {
+            padding: 10px 20px;
+            border: none;
+            background-color: #007bff;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        #send-button:hover, #add-image-button:hover {
+            background-color: #0056b3;
+        }
+        #add-image-button {
+            background-color: #4CAF50;
+            margin-left: 10px;
+        }
+        pre {
+            background-color: #333;
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        .image-container {
+            max-width: 100%;
+            height: auto;
+            border-radius: 10px;
+            margin-top: 10px;
+        }
+    </style>
 </head>
 <body>
 
-    <div id="app-container">
-        
-        <div id="sidebar">
-            <div id="sidebar-header">
-                <h3>群組</h3>
-                <button id="create-group-btn">+</button>
-            </div>
-            <ul id="group-list">
-                </ul>
+    <div id="group-sidebar">
+        <h2>聊天室列表</h2>
+        <ul id="group-list">
+        </ul>
+        <button id="create-group-btn">新增群組</button>
+    </div>
+
+    <div id="main-chat-container">
+        <div id="chat-header">
+            <span id="current-group-title"></span>
         </div>
-
-        <div id="main-chat-area">
-            
-            <div id="chat-header">
-                <h3 id="current-group-title"></h3>
-            </div>
-            
-            <div id="chat-box">
-                </div>
-
-            <div id="input-area">
-                <input type="text" id="username" placeholder="你的名字" value="我" class="input-field">
-                <textarea id="message" placeholder="輸入訊息..."></textarea>
-                <button id="send-button">發送</button>
+        <div id="chat-box">
+            <!-- Messages will be loaded here -->
+        </div>
+        <div id="input-container">
+            <div id="progress-status"></div>
+            <div id="input-row">
+                <input type="text" id="username" placeholder="你的名字" required>
+                <input type="text" id="message" placeholder="輸入訊息..." required>
+                <button id="add-image-button">新增圖片</button>
+                <button id="send-button">送出</button>
             </div>
         </div>
     </div>
+    
+    <!-- 隱藏的檔案選擇輸入框 -->
+    <input type="file" id="image-input" accept="image/*" style="display:none;">
 
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // 請將此處替換為您的 Apps Script 部署 URL
+            const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw13ZKohUZlQU-jjrg8C-bN4au4Jd2KwjSa9jmHIVppYjOE-Avxew1Bz_gWWlUGus68/exec';
+
+            const chatBox = document.getElementById('chat-box');
+            const usernameInput = document.getElementById('username');
+            const messageInput = document.getElementById('message');
+            const sendButton = document.getElementById('send-button');
+            const addImageButton = document.getElementById('add-image-button');
+            const imageInput = document.getElementById('image-input');
+            const groupList = document.getElementById('group-list');
+            const createGroupBtn = document.getElementById('create-group-btn');
+            const currentGroupTitle = document.getElementById('current-group-title');
+            const progressStatus = document.getElementById('progress-status');
+
+            let currentGroup = null;
+            let lastDate = null;
+            let fetchInterval = null;
+            let isSending = false;
+
+            /** 將字串中的HTML特殊字元轉換為實體，避免XSS攻擊 */
+            function escapeHtml(unsafe) {
+                return unsafe
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;")
+                    .replace(/"/g, "&quot;")
+                    .replace(/'/g, "&#039;");
+            }
+
+            /** 格式化日期和時間 */
+            function formatMessageTime(timestamp) {
+                const date = new Date(timestamp);
+                const hours = date.getHours().toString().padStart(2, '0');
+                const minutes = date.getMinutes().toString().padStart(2, '0');
+                return `${hours}:${minutes}`;
+            }
+
+            /** 格式化日期標頭 */
+            function formatDateHeader(timestamp) {
+                const date = new Date(timestamp);
+                const options = { year: 'numeric', month: 'long', day: 'numeric' };
+                return date.toLocaleDateString('zh-TW', options);
+            }
+
+            /** 獲取並顯示群組列表 */
+            function fetchGroups() {
+                $.ajax({
+                    url: APPS_SCRIPT_URL,
+                    type: 'GET',
+                    data: { action: 'getGroups' },
+                    dataType: 'jsonp',
+                    success: function(response) {
+                        groupList.innerHTML = '';
+                        
+                        let pinnedGroup = null;
+                        const filteredGroups = response.groups.filter(group => {
+                            if (group.GroupID === '0') {
+                                pinnedGroup = group;
+                                return false;
+                            }
+                            return true;
+                        });
+                        
+                        if (pinnedGroup) {
+                            currentGroup = pinnedGroup;
+                            currentGroupTitle.textContent = pinnedGroup.GroupName;
+                            messageInput.disabled = true;
+                            messageInput.placeholder = "此為置頂公告區，無法發送訊息";
+                            sendButton.disabled = true;
+                            addImageButton.disabled = true;
+                            selectGroup(pinnedGroup);
+                        }
+
+                        filteredGroups.forEach(group => {
+                            const groupItem = document.createElement('li');
+                            groupItem.textContent = group.GroupName;
+                            groupItem.dataset.groupId = group.GroupID;
+                            groupItem.addEventListener('click', () => selectGroup(group));
+                            groupList.appendChild(groupItem);
+                        });
+                        
+                        if (!currentGroup && filteredGroups.length > 0) {
+                            selectGroup(filteredGroups[0]);
+                        } else if (currentGroup && filteredGroups.length > 0) {
+                            const activeGroupElement = document.querySelector(`[data-group-id="${currentGroup.GroupID}"]`);
+                            if (activeGroupElement) {
+                                activeGroupElement.classList.add('active');
+                            }
+                        } else if (!currentGroup) {
+                            const noGroupsMessage = document.createElement('li');
+                            noGroupsMessage.textContent = '沒有其他群組，請新增群組。';
+                            noGroupsMessage.style.textAlign = 'center';
+                            noGroupsMessage.style.padding = '15px';
+                            groupList.appendChild(noGroupsMessage);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error fetching groups:', error);
+                    }
+                });
+            }
+
+            /** 選擇群組並載入訊息 */
+            function selectGroup(group) {
+                if (currentGroup && currentGroup.GroupID === group.GroupID) {
+                    return;
+                }
+
+                currentGroup = group;
+                currentGroupTitle.textContent = group.GroupName;
+                lastDate = null;
+                messageInput.disabled = false;
+                messageInput.placeholder = "輸入訊息...";
+                sendButton.disabled = false;
+                addImageButton.disabled = false;
+                
+                chatBox.innerHTML = '';
+                
+                document.querySelectorAll('#group-list li').forEach(item => item.classList.remove('active'));
+                const activeGroupElement = document.querySelector(`[data-group-id="${group.GroupID}"]`);
+                if (activeGroupElement) {
+                    activeGroupElement.classList.add('active');
+                }
+
+                if (fetchInterval) {
+                    clearInterval(fetchInterval);
+                }
+
+                fetchMessages(true);
+                fetchInterval = setInterval(() => fetchMessages(false), 3000);
+            }
+
+            /** 讀取訊息 */
+            function fetchMessages(isInitialLoad) {
+                if (!currentGroup) return;
+
+                const isScrolledToBottom = chatBox.scrollHeight - chatBox.clientHeight <= chatBox.scrollTop + 1;
+                
+                $.ajax({
+                    url: APPS_SCRIPT_URL,
+                    type: 'GET',
+                    data: { 
+                        action: 'getMessages',
+                        groupID: currentGroup.GroupID,
+                    },
+                    dataType: 'jsonp',
+                    success: function(response) {
+                        if (!response.messages || response.messages.length === 0) {
+                            return;
+                        }
+
+                        chatBox.innerHTML = '';
+                        lastDate = null;
+                        
+                        response.messages.forEach(msg => {
+                            if (!msg.message && !msg.temp_message) return;
+                            
+                            const messageDate = new Date(msg.Timestamp);
+                            const currentDateString = messageDate.toDateString();
+
+                            if (lastDate && currentDateString !== lastDate) {
+                                const dateHeader = document.createElement('div');
+                                dateHeader.classList.add('date-header');
+                                dateHeader.textContent = formatDateHeader(messageDate);
+                                chatBox.appendChild(dateHeader);
+                            }
+                            lastDate = currentDateString;
+
+                            const messageElement = document.createElement('div');
+                            messageElement.classList.add('message');
+                            
+                            const messageContent = msg.message;
+                            
+                            // 檢查是否為程式碼區塊
+                            const codeMatch = messageContent.match(/^`{3}([\s\S]*)`{3}$/);
+                            if (codeMatch) {
+                                const codeContent = escapeHtml(codeMatch[1].trim());
+                                messageElement.innerHTML = `
+                                    <strong>${escapeHtml(msg.user)}:</strong>
+                                    <pre><code style="white-space: pre-wrap;">${codeContent}</code></pre>
+                                    <span class="message-time">${formatMessageTime(msg.Timestamp)}</span>
+                                `;
+                            } else {
+                                // 先處理文字部分
+                                messageElement.innerHTML = `
+                                    <strong>${escapeHtml(msg.user)}:</strong> ${escapeHtml(messageContent)}
+                                    <span class="message-time">${formatMessageTime(msg.Timestamp)}</span>
+                                `;
+                                
+                                // 檢查是否包含 Imgur 網址並新增圖片
+                                const imgurMatch = messageContent.match(/imgur\.com\/(.*?)(?:\.[a-zA-Z0-9]+)?$/i);
+                                if (imgurMatch) {
+                                    const imgurUrl = `https://i.imgur.com/${imgurMatch[1]}.png`;
+                                    const imgElement = document.createElement('img');
+                                    imgElement.src = imgurUrl;
+                                    imgElement.classList.add('image-container');
+                                    imgElement.onerror = function() {
+                                        this.onerror = null;
+                                        this.src = `https://imgur.com/${imgurMatch[1]}.jpeg`;
+                                    };
+                                    messageElement.appendChild(imgElement);
+                                }
+                            }
+
+                            chatBox.appendChild(messageElement);
+                        });
+
+                        if (isInitialLoad || isScrolledToBottom) {
+                            chatBox.scrollTop = chatBox.scrollHeight;
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error fetching messages:', error);
+                    }
+                });
+            }
+
+            /** 發送訊息函式（使用 GET 請求並切割訊息） */
+            async function sendMessage(message, type = 'text') {
+                if (isSending || sendButton.disabled) return;
+                
+                if (!currentGroup) {
+                    console.log('請先選擇一個群組！'); 
+                    return;
+                }
+                const user = usernameInput.value.trim();
+
+                if (!user || !message) {
+                    console.log('請輸入你的名字和訊息！');
+                    return;
+                }
+                
+                isSending = true;
+                const chunkSize = 1000;
+                const messageChunks = [];
+                for (let i = 0; i < message.length; i += chunkSize) {
+                    messageChunks.push(message.substring(i, i + chunkSize));
+                }
+                const totalChunks = messageChunks.length;
+
+                // 只有當需要分塊時才顯示進度
+                if (totalChunks > 1 || type === 'image') {
+                    progressStatus.style.visibility = 'visible';
+                    usernameInput.disabled = true;
+                    messageInput.disabled = true;
+                    sendButton.disabled = true;
+                    addImageButton.disabled = true;
+                }
+
+                let tempRowId = null;
+
+                for (let i = 0; i < totalChunks; i++) {
+                    const chunk = messageChunks[i];
+                    progressStatus.textContent = `正在傳送... [${i + 1}/${totalChunks}]`;
+                    let success = false;
+                    for (let attempt = 0; attempt < 5; attempt++) {
+                        try {
+                            const response = await $.ajax({
+                                url: APPS_SCRIPT_URL,
+                                type: 'GET',
+                                data: {
+                                    action: 'send',
+                                    groupID: currentGroup.GroupID,
+                                    user: user,
+                                    messageChunk: chunk,
+                                    chunkId: i,
+                                    totalChunks: totalChunks,
+                                    tempRowId: tempRowId,
+                                    type: type
+                                },
+                                dataType: 'jsonp'
+                            });
+
+                            if (response.status === 'success') {
+                                if (response.tempRowId) {
+                                    tempRowId = response.tempRowId;
+                                }
+                                success = true;
+                                break; // 成功後跳出重試迴圈
+                            } else {
+                                throw new Error(response.message || '傳送失敗！');
+                            }
+                        } catch (error) {
+                            console.error(`傳送分塊 ${i + 1} 失敗 (第 ${attempt + 1} 次重試):`, error);
+                            if (attempt === 4) {
+                                alert('傳送失敗，請稍後再試。');
+                                isSending = false;
+                                return;
+                            }
+                        }
+                    }
+                    if (!success) {
+                        isSending = false;
+                        return;
+                    }
+                }
+                
+                progressStatus.style.visibility = 'hidden';
+                usernameInput.disabled = false;
+                messageInput.disabled = false;
+                sendButton.disabled = false;
+                addImageButton.disabled = false;
+                
+                fetchMessages(false);
+                messageInput.value = '';
+                isSending = false;
+            }
+
+            // 新增圖片按鈕點擊事件
+            addImageButton.addEventListener('click', () => {
+                imageInput.click();
+            });
+
+            // 處理圖片上傳
+            imageInput.addEventListener('change', (event) => {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const base64Image = e.target.result.split(',')[1];
+                    sendMessage(base64Image, 'image');
+                };
+                reader.readAsDataURL(file);
+            });
+
+            // 送出按鈕點擊事件
+            sendButton.addEventListener('click', () => {
+                sendMessage(messageInput.value.trim());
+            });
+
+            // 鍵盤 Enter 鍵事件
+            messageInput.addEventListener('keypress', (event) => {
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                    sendMessage(messageInput.value.trim());
+                }
+            });
+
+            // 新增群組按鈕點擊事件
+            createGroupBtn.addEventListener('click', () => {
+                const groupName = prompt('請輸入新群組名稱：');
+                if (groupName) {
+                    $.ajax({
+                        url: APPS_SCRIPT_URL,
+                        type: 'GET',
+                        data: {
+                            action: 'createGroup',
+                            groupName: groupName
+                        },
+                        dataType: 'jsonp',
+                        success: function(response) {
+                            if (response.status === 'success') {
+                                alert(`群組 "${response.groupName}" 已成功建立！`);
+                                fetchGroups();
+                            } else {
+                                alert(response.message);
+                            }
+                        },
+                        error: function(xhr, status, error) {
+                            console.error('Error creating group:', error);
+                        }
+                    });
+                }
+            });
+
+            // 初始化
+            fetchGroups();
+        });
+    </script>
 </body>
 </html>
