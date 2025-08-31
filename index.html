@@ -1,4 +1,3 @@
-<!-- 20250901 01:19 -->
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -172,7 +171,6 @@
             max-width: 100%;
             height: auto;
             border-radius: 10px;
-            margin-top: 10px;
         }
     </style>
 </head>
@@ -225,7 +223,6 @@
             let currentGroup = null;
             let lastDate = null;
             let fetchInterval = null;
-            let isSending = false;
 
             /** 將字串中的HTML特殊字元轉換為實體，避免XSS攻擊 */
             function escapeHtml(unsafe) {
@@ -350,7 +347,6 @@
                     url: APPS_SCRIPT_URL,
                     type: 'GET',
                     data: { 
-                        action: 'getMessages',
                         groupID: currentGroup.GroupID,
                     },
                     dataType: 'jsonp',
@@ -381,34 +377,27 @@
                             
                             const messageContent = msg.message;
                             
-                            // 檢查是否為程式碼區塊
-                            const codeMatch = messageContent.match(/^`{3}([\s\S]*)`{3}$/);
-                            if (codeMatch) {
-                                const codeContent = escapeHtml(codeMatch[1].trim());
+                            // 根據類型顯示內容
+                            if (msg.type === 'image') {
                                 messageElement.innerHTML = `
                                     <strong>${escapeHtml(msg.user)}:</strong>
-                                    <pre><code style="white-space: pre-wrap;">${codeContent}</code></pre>
+                                    <br><img src="${messageContent}" class="image-container" alt="user_image">
                                     <span class="message-time">${formatMessageTime(msg.Timestamp)}</span>
                                 `;
                             } else {
-                                // 先處理文字部分
-                                messageElement.innerHTML = `
-                                    <strong>${escapeHtml(msg.user)}:</strong> ${escapeHtml(messageContent)}
-                                    <span class="message-time">${formatMessageTime(msg.Timestamp)}</span>
-                                `;
-                                
-                                // 檢查是否包含 Imgur 網址並新增圖片
-                                const imgurMatch = messageContent.match(/imgur\.com\/(.*?)(?:\.[a-zA-Z0-9]+)?$/i);
-                                if (imgurMatch) {
-                                    const imgurUrl = `https://i.imgur.com/${imgurMatch[1]}.png`;
-                                    const imgElement = document.createElement('img');
-                                    imgElement.src = imgurUrl;
-                                    imgElement.classList.add('image-container');
-                                    imgElement.onerror = function() {
-                                        this.onerror = null;
-                                        this.src = `https://imgur.com/${imgurMatch[1]}.jpeg`;
-                                    };
-                                    messageElement.appendChild(imgElement);
+                                const codeMatch = messageContent.match(/^`{3}([\s\S]*)`{3}$/);
+                                if (codeMatch) {
+                                    const codeContent = escapeHtml(codeMatch[1].trim());
+                                    messageElement.innerHTML = `
+                                        <strong>${escapeHtml(msg.user)}:</strong>
+                                        <pre><code style="white-space: pre-wrap;">${codeContent}</code></pre>
+                                        <span class="message-time">${formatMessageTime(msg.Timestamp)}</span>
+                                    `;
+                                } else {
+                                    messageElement.innerHTML = `
+                                        <strong>${escapeHtml(msg.user)}:</strong> ${escapeHtml(messageContent)}
+                                        <span class="message-time">${formatMessageTime(msg.Timestamp)}</span>
+                                    `;
                                 }
                             }
 
@@ -427,20 +416,20 @@
 
             /** 發送訊息函式（使用 GET 請求並切割訊息） */
             async function sendMessage(message, type = 'text') {
-                if (isSending || sendButton.disabled) return;
-                
+                if (sendButton.disabled) return;
                 if (!currentGroup) {
+                    // 使用自訂模態對話框或在UI中顯示訊息，不要使用alert
                     console.log('請先選擇一個群組！'); 
                     return;
                 }
                 const user = usernameInput.value.trim();
 
                 if (!user || !message) {
+                     // 使用自訂模態對話框或在UI中顯示訊息，不要使用alert
                     console.log('請輸入你的名字和訊息！');
                     return;
                 }
                 
-                isSending = true;
                 const chunkSize = 1000;
                 const messageChunks = [];
                 for (let i = 0; i < message.length; i += chunkSize) {
@@ -449,7 +438,7 @@
                 const totalChunks = messageChunks.length;
 
                 // 只有當需要分塊時才顯示進度
-                if (totalChunks > 1 || type === 'image') {
+                if (totalChunks > 1) {
                     progressStatus.style.visibility = 'visible';
                     usernameInput.disabled = true;
                     messageInput.disabled = true;
@@ -492,79 +481,45 @@
                             }
                         } catch (error) {
                             console.error(`傳送分塊 ${i + 1} 失敗 (第 ${attempt + 1} 次重試):`, error);
-                            if (attempt === 4) {
-                                alert('傳送失敗，請稍後再試。');
-                                isSending = false;
-                                return;
-                            }
+                            // 延遲一段時間後再重試
+                            await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, attempt)));
                         }
                     }
+
                     if (!success) {
-                        isSending = false;
-                        return;
+                        console.error(`分塊 ${i + 1} 重試 5 次後仍失敗，傳送中斷！`);
+                        // 這裡可以選擇是否顯示錯誤訊息給用戶
+                        break;
                     }
                 }
-                
+
+                // 恢復輸入框和按鈕狀態
                 progressStatus.style.visibility = 'hidden';
                 usernameInput.disabled = false;
                 messageInput.disabled = false;
                 sendButton.disabled = false;
                 addImageButton.disabled = false;
-                
-                fetchMessages(false);
                 messageInput.value = '';
-                isSending = false;
+                fetchMessages(true);
             }
 
-            // 新增圖片按鈕點擊事件
-            addImageButton.addEventListener('click', () => {
-                imageInput.click();
-            });
-
-            // 處理圖片上傳
-            imageInput.addEventListener('change', (event) => {
-                const file = event.target.files[0];
-                if (!file) return;
-
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const base64Image = e.target.result.split(',')[1];
-                    sendMessage(base64Image, 'image');
-                };
-                reader.readAsDataURL(file);
-            });
-
-            // 送出按鈕點擊事件
-            sendButton.addEventListener('click', () => {
-                sendMessage(messageInput.value.trim());
-            });
-
-            // 鍵盤 Enter 鍵事件
-            messageInput.addEventListener('keypress', (event) => {
-                if (event.key === 'Enter') {
-                    event.preventDefault();
-                    sendMessage(messageInput.value.trim());
-                }
-            });
-
-            // 新增群組按鈕點擊事件
-            createGroupBtn.addEventListener('click', () => {
+            /** 建立新群組 */
+            function createGroup() {
                 const groupName = prompt('請輸入新群組名稱：');
                 if (groupName) {
                     $.ajax({
                         url: APPS_SCRIPT_URL,
                         type: 'GET',
-                        data: {
-                            action: 'createGroup',
-                            groupName: groupName
-                        },
+                        data: { action: 'createGroup', groupName: groupName },
                         dataType: 'jsonp',
                         success: function(response) {
                             if (response.status === 'success') {
-                                alert(`群組 "${response.groupName}" 已成功建立！`);
+                                // 使用自訂模態對話框或在UI中顯示訊息，不要使用alert
+                                console.log('新群組已建立！');
                                 fetchGroups();
                             } else {
-                                alert(response.message);
+                                // 使用自訂模態對話框或在UI中顯示訊息，不要使用alert
+                                console.log('群組建立失敗！');
                             }
                         },
                         error: function(xhr, status, error) {
@@ -572,9 +527,34 @@
                         }
                     });
                 }
+            }
+            
+            // 監聽圖片選擇
+            imageInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    const base64String = reader.result;
+                    sendMessage(base64String, 'image');
+                };
+                reader.readAsDataURL(file);
             });
 
-            // 初始化
+            sendButton.addEventListener('click', () => {
+                sendMessage(messageInput.value);
+            });
+            messageInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    sendMessage(messageInput.value);
+                }
+            });
+            createGroupBtn.addEventListener('click', createGroup);
+            addImageButton.addEventListener('click', () => {
+                imageInput.click();
+            });
+
             fetchGroups();
         });
     </script>
