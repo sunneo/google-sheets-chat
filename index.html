@@ -1,4 +1,4 @@
-<!-- 20250901 02:00 -->
+<!-- 20250901 01:19 -->
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -14,11 +14,9 @@
             background-color: #f4f4f4;
             display: flex;
             height: 100vh;
-            user-select: none; /* 防止拖動時選取文字 */
         }
         #group-sidebar {
             width: 250px;
-            min-width: 150px;
             background-color: #333;
             color: #fff;
             padding: 20px;
@@ -26,8 +24,6 @@
             display: flex;
             flex-direction: column;
             overflow-y: auto;
-            resize: horizontal;
-            overflow: auto;
         }
         #group-sidebar h2 {
             margin-top: 0;
@@ -213,7 +209,7 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             // 請將此處替換為您的 Apps Script 部署 URL
-            const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw13ZKohUZlQU-jjrg8C-bN4au4Jd2KwjSa9jmHIVppYjOE-Avxew1Bz_gWWU_gH-69/exec';
+            const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw13ZKohUZlQU-jjrg8C-bN4au4Jd2KwjSa9jmHIVppYjOE-Avxew1Bz_gWWlUGus68/exec';
 
             const chatBox = document.getElementById('chat-box');
             const usernameInput = document.getElementById('username');
@@ -225,7 +221,6 @@
             const createGroupBtn = document.getElementById('create-group-btn');
             const currentGroupTitle = document.getElementById('current-group-title');
             const progressStatus = document.getElementById('progress-status');
-            const sidebar = document.getElementById('group-sidebar');
 
             let currentGroup = null;
             let lastDate = null;
@@ -395,34 +390,23 @@
                                     <pre><code style="white-space: pre-wrap;">${codeContent}</code></pre>
                                     <span class="message-time">${formatMessageTime(msg.Timestamp)}</span>
                                 `;
-                            } else if (msg.type === 'image') {
-                                // 修正圖片顯示邏輯：後端傳回 Base64 資料，前端需要手動加上 data URI 前綴
+                            } else {
+                                // 先處理文字部分
                                 messageElement.innerHTML = `
-                                    <strong>${escapeHtml(msg.user)}:</strong>
-                                    <br><img src="${messageContent}" class="image-container" alt="user_image">
+                                    <strong>${escapeHtml(msg.user)}:</strong> ${escapeHtml(messageContent)}
                                     <span class="message-time">${formatMessageTime(msg.Timestamp)}</span>
                                 `;
-                            } else {
-                                // 處理文字內容並偵測 Imgur 連結
-                                let displayText = escapeHtml(messageContent);
-                                messageElement.innerHTML = `<strong>${escapeHtml(msg.user)}:</strong> ${displayText} <span class="message-time">${formatMessageTime(msg.Timestamp)}</span>`;
                                 
-                                // 檢查文字訊息中是否包含 Imgur 網址
-                                const imgurMatch = messageContent.match(/imgur\.com\/(?:gallery|a|t|r)?\/?([a-zA-Z0-9-]+)/i);
-                                if (imgurMatch && imgurMatch[1]) {
-                                    const imageId = imgurMatch[1];
+                                // 檢查是否包含 Imgur 網址並新增圖片
+                                const imgurMatch = messageContent.match(/imgur\.com\/(.*?)(?:\.[a-zA-Z0-9]+)?$/i);
+                                if (imgurMatch) {
+                                    const imgurUrl = `https://i.imgur.com/${imgurMatch[1]}.png`;
                                     const imgElement = document.createElement('img');
+                                    imgElement.src = imgurUrl;
                                     imgElement.classList.add('image-container');
-                                    
-                                    // 設置主要圖片連結，並加入錯誤處理以嘗試不同格式
-                                    imgElement.src = `https://i.imgur.com/${imageId}.jpg`;
                                     imgElement.onerror = function() {
-                                        this.onerror = null; // 防止無限迴圈
-                                        this.src = `https://i.imgur.com/${imageId}.png`; // 嘗試 PNG
-                                        this.onerror = function() {
-                                            this.onerror = null;
-                                            this.src = `https://i.imgur.com/${imageId}.gif`; // 最後嘗試 GIF
-                                        };
+                                        this.onerror = null;
+                                        this.src = `https://imgur.com/${imgurMatch[1]}.jpeg`;
                                     };
                                     messageElement.appendChild(imgElement);
                                 }
@@ -446,7 +430,7 @@
                 if (isSending || sendButton.disabled) return;
                 
                 if (!currentGroup) {
-                    console.log('請先選擇一個群組！');  
+                    console.log('請先選擇一個群組！'); 
                     return;
                 }
                 const user = usernameInput.value.trim();
@@ -509,8 +493,7 @@
                         } catch (error) {
                             console.error(`傳送分塊 ${i + 1} 失敗 (第 ${attempt + 1} 次重試):`, error);
                             if (attempt === 4) {
-                                // 替換 alert，因為在 iFrame 中無法顯示
-                                console.error('傳送失敗，請稍後再試。');
+                                alert('傳送失敗，請稍後再試。');
                                 isSending = false;
                                 return;
                             }
@@ -578,10 +561,10 @@
                         dataType: 'jsonp',
                         success: function(response) {
                             if (response.status === 'success') {
-                                console.log(`群組 "${response.groupName}" 已成功建立！`);
+                                alert(`群組 "${response.groupName}" 已成功建立！`);
                                 fetchGroups();
                             } else {
-                                console.error(response.message);
+                                alert(response.message);
                             }
                         },
                         error: function(xhr, status, error) {
