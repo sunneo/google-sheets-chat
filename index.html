@@ -1,8 +1,6 @@
+<!-- 20250901 02:00 -->
 <!DOCTYPE html>
 <html lang="zh-TW">
-<!-- 
-20250901 02:11
--->
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -215,7 +213,7 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             // 請將此處替換為您的 Apps Script 部署 URL
-            const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzU6ireyTAo0_6uNWVr6Em4sOMGbE5CzlYCFoCb5UMrErP6GQ7O07qxkojTDxVKgtbC/exec';
+            const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw13ZKohUZlQU-jjrg8C-bN4au4Jd2KwjSa9jmHIVppYjOE-Avxew1Bz_gWWU_gH-69/exec';
 
             const chatBox = document.getElementById('chat-box');
             const usernameInput = document.getElementById('username');
@@ -260,61 +258,61 @@
             }
 
             /** 獲取並顯示群組列表 */
-            async function fetchGroups() {
-                try {
-                    const url = new URL(APPS_SCRIPT_URL);
-                    url.searchParams.append('action', 'getGroups');
-                    const response = await fetch(url);
-                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-                    
-                    const data = await response.json();
-                    
-                    groupList.innerHTML = '';
-                    
-                    let pinnedGroup = null;
-                    const filteredGroups = data.groups.filter(group => {
-                        if (group.GroupID === '0') {
-                            pinnedGroup = group;
-                            return false;
+            function fetchGroups() {
+                $.ajax({
+                    url: APPS_SCRIPT_URL,
+                    type: 'GET',
+                    data: { action: 'getGroups' },
+                    dataType: 'jsonp',
+                    success: function(response) {
+                        groupList.innerHTML = '';
+                        
+                        let pinnedGroup = null;
+                        const filteredGroups = response.groups.filter(group => {
+                            if (group.GroupID === '0') {
+                                pinnedGroup = group;
+                                return false;
+                            }
+                            return true;
+                        });
+                        
+                        if (pinnedGroup) {
+                            currentGroup = pinnedGroup;
+                            currentGroupTitle.textContent = pinnedGroup.GroupName;
+                            messageInput.disabled = true;
+                            messageInput.placeholder = "此為置頂公告區，無法發送訊息";
+                            sendButton.disabled = true;
+                            addImageButton.disabled = true;
+                            selectGroup(pinnedGroup);
                         }
-                        return true;
-                    });
-                    
-                    if (pinnedGroup) {
-                        currentGroup = pinnedGroup;
-                        currentGroupTitle.textContent = pinnedGroup.GroupName;
-                        messageInput.disabled = true;
-                        messageInput.placeholder = "此為置頂公告區，無法發送訊息";
-                        sendButton.disabled = true;
-                        addImageButton.disabled = true;
-                        selectGroup(pinnedGroup);
-                    }
 
-                    filteredGroups.forEach(group => {
-                        const groupItem = document.createElement('li');
-                        groupItem.textContent = group.GroupName;
-                        groupItem.dataset.groupId = group.GroupID;
-                        groupItem.addEventListener('click', () => selectGroup(group));
-                        groupList.appendChild(groupItem);
-                    });
-                    
-                    if (!currentGroup && filteredGroups.length > 0) {
-                        selectGroup(filteredGroups[0]);
-                    } else if (currentGroup && filteredGroups.length > 0) {
-                        const activeGroupElement = document.querySelector(`[data-group-id="${currentGroup.GroupID}"]`);
-                        if (activeGroupElement) {
-                            activeGroupElement.classList.add('active');
+                        filteredGroups.forEach(group => {
+                            const groupItem = document.createElement('li');
+                            groupItem.textContent = group.GroupName;
+                            groupItem.dataset.groupId = group.GroupID;
+                            groupItem.addEventListener('click', () => selectGroup(group));
+                            groupList.appendChild(groupItem);
+                        });
+                        
+                        if (!currentGroup && filteredGroups.length > 0) {
+                            selectGroup(filteredGroups[0]);
+                        } else if (currentGroup && filteredGroups.length > 0) {
+                            const activeGroupElement = document.querySelector(`[data-group-id="${currentGroup.GroupID}"]`);
+                            if (activeGroupElement) {
+                                activeGroupElement.classList.add('active');
+                            }
+                        } else if (!currentGroup) {
+                            const noGroupsMessage = document.createElement('li');
+                            noGroupsMessage.textContent = '沒有其他群組，請新增群組。';
+                            noGroupsMessage.style.textAlign = 'center';
+                            noGroupsMessage.style.padding = '15px';
+                            groupList.appendChild(noGroupsMessage);
                         }
-                    } else if (!currentGroup) {
-                        const noGroupsMessage = document.createElement('li');
-                        noGroupsMessage.textContent = '沒有其他群組，請新增群組。';
-                        noGroupsMessage.style.textAlign = 'center';
-                        noGroupsMessage.style.padding = '15px';
-                        groupList.appendChild(noGroupsMessage);
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error fetching groups:', error);
                     }
-                } catch (error) {
-                    console.error('Error fetching groups:', error);
-                }
+                });
             }
 
             /** 選擇群組並載入訊息 */
@@ -348,98 +346,99 @@
             }
 
             /** 讀取訊息 */
-            async function fetchMessages(isInitialLoad) {
+            function fetchMessages(isInitialLoad) {
                 if (!currentGroup) return;
 
                 const isScrolledToBottom = chatBox.scrollHeight - chatBox.clientHeight <= chatBox.scrollTop + 1;
                 
-                try {
-                    const url = new URL(APPS_SCRIPT_URL);
-                    url.searchParams.append('action', 'getMessages');
-                    url.searchParams.append('groupID', currentGroup.GroupID);
-                    
-                    const response = await fetch(url);
-                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-                    
-                    const data = await response.json();
-
-                    if (!data.messages || data.messages.length === 0) {
-                        return;
-                    }
-
-                    chatBox.innerHTML = '';
-                    lastDate = null;
-                    
-                    data.messages.forEach(msg => {
-                        if (!msg.message && !msg.temp_message) return;
-                        
-                        const messageDate = new Date(msg.Timestamp);
-                        const currentDateString = messageDate.toDateString();
-
-                        if (lastDate && currentDateString !== lastDate) {
-                            const dateHeader = document.createElement('div');
-                            dateHeader.classList.add('date-header');
-                            dateHeader.textContent = formatDateHeader(messageDate);
-                            chatBox.appendChild(dateHeader);
+                $.ajax({
+                    url: APPS_SCRIPT_URL,
+                    type: 'GET',
+                    data: { 
+                        action: 'getMessages',
+                        groupID: currentGroup.GroupID,
+                    },
+                    dataType: 'jsonp',
+                    success: function(response) {
+                        if (!response.messages || response.messages.length === 0) {
+                            return;
                         }
-                        lastDate = currentDateString;
 
-                        const messageElement = document.createElement('div');
-                        messageElement.classList.add('message');
+                        chatBox.innerHTML = '';
+                        lastDate = null;
                         
-                        const messageContent = msg.message;
-                        
-                        // 檢查是否為程式碼區塊
-                        const codeMatch = messageContent.match(/^`{3}([\s\S]*)`{3}$/);
-                        if (codeMatch) {
-                            const codeContent = escapeHtml(codeMatch[1].trim());
-                            messageElement.innerHTML = `
-                                <strong>${escapeHtml(msg.user)}:</strong>
-                                <pre><code style="white-space: pre-wrap;">${codeContent}</code></pre>
-                                <span class="message-time">${formatMessageTime(msg.Timestamp)}</span>
-                            `;
-                        } else if (msg.type === 'image') {
-                            // 修正圖片顯示邏輯：後端傳回 Base64 資料，前端需要手動加上 data URI 前綴
-                            messageElement.innerHTML = `
-                                <strong>${escapeHtml(msg.user)}:</strong>
-                                <br><img src="${messageContent}" class="image-container" alt="user_image">
-                                <span class="message-time">${formatMessageTime(msg.Timestamp)}</span>
-                            `;
-                        } else {
-                            // 處理文字內容並偵測 Imgur 連結
-                            let displayText = escapeHtml(messageContent);
-                            messageElement.innerHTML = `<strong>${escapeHtml(msg.user)}:</strong> ${displayText} <span class="message-time">${formatMessageTime(msg.Timestamp)}</span>`;
+                        response.messages.forEach(msg => {
+                            if (!msg.message && !msg.temp_message) return;
                             
-                            // 檢查文字訊息中是否包含 Imgur 網址
-                            const imgurMatch = messageContent.match(/imgur\.com\/(?:gallery|a|t|r)?\/?([a-zA-Z0-9-]+)/i);
-                            if (imgurMatch && imgurMatch[1]) {
-                                const imageId = imgurMatch[1];
-                                const imgElement = document.createElement('img');
-                                imgElement.classList.add('image-container');
-                                
-                                // 設置主要圖片連結，並加入錯誤處理以嘗試不同格式
-                                imgElement.src = `https://i.imgur.com/${imageId}.jpg`;
-                                imgElement.onerror = function() {
-                                    this.onerror = null; // 防止無限迴圈
-                                    this.src = `https://i.imgur.com/${imageId}.png`; // 嘗試 PNG
-                                    this.onerror = function() {
-                                        this.onerror = null;
-                                        this.src = `https://i.imgur.com/${imageId}.gif`; // 最後嘗試 GIF
-                                    };
-                                };
-                                messageElement.appendChild(imgElement);
+                            const messageDate = new Date(msg.Timestamp);
+                            const currentDateString = messageDate.toDateString();
+
+                            if (lastDate && currentDateString !== lastDate) {
+                                const dateHeader = document.createElement('div');
+                                dateHeader.classList.add('date-header');
+                                dateHeader.textContent = formatDateHeader(messageDate);
+                                chatBox.appendChild(dateHeader);
                             }
+                            lastDate = currentDateString;
+
+                            const messageElement = document.createElement('div');
+                            messageElement.classList.add('message');
+                            
+                            const messageContent = msg.message;
+                            
+                            // 檢查是否為程式碼區塊
+                            const codeMatch = messageContent.match(/^`{3}([\s\S]*)`{3}$/);
+                            if (codeMatch) {
+                                const codeContent = escapeHtml(codeMatch[1].trim());
+                                messageElement.innerHTML = `
+                                    <strong>${escapeHtml(msg.user)}:</strong>
+                                    <pre><code style="white-space: pre-wrap;">${codeContent}</code></pre>
+                                    <span class="message-time">${formatMessageTime(msg.Timestamp)}</span>
+                                `;
+                            } else if (msg.type === 'image') {
+                                // 修正圖片顯示邏輯：後端傳回 Base64 資料，前端需要手動加上 data URI 前綴
+                                messageElement.innerHTML = `
+                                    <strong>${escapeHtml(msg.user)}:</strong>
+                                    <br><img src="${messageContent}" class="image-container" alt="user_image">
+                                    <span class="message-time">${formatMessageTime(msg.Timestamp)}</span>
+                                `;
+                            } else {
+                                // 處理文字內容並偵測 Imgur 連結
+                                let displayText = escapeHtml(messageContent);
+                                messageElement.innerHTML = `<strong>${escapeHtml(msg.user)}:</strong> ${displayText} <span class="message-time">${formatMessageTime(msg.Timestamp)}</span>`;
+                                
+                                // 檢查文字訊息中是否包含 Imgur 網址
+                                const imgurMatch = messageContent.match(/imgur\.com\/(?:gallery|a|t|r)?\/?([a-zA-Z0-9-]+)/i);
+                                if (imgurMatch && imgurMatch[1]) {
+                                    const imageId = imgurMatch[1];
+                                    const imgElement = document.createElement('img');
+                                    imgElement.classList.add('image-container');
+                                    
+                                    // 設置主要圖片連結，並加入錯誤處理以嘗試不同格式
+                                    imgElement.src = `https://i.imgur.com/${imageId}.jpg`;
+                                    imgElement.onerror = function() {
+                                        this.onerror = null; // 防止無限迴圈
+                                        this.src = `https://i.imgur.com/${imageId}.png`; // 嘗試 PNG
+                                        this.onerror = function() {
+                                            this.onerror = null;
+                                            this.src = `https://i.imgur.com/${imageId}.gif`; // 最後嘗試 GIF
+                                        };
+                                    };
+                                    messageElement.appendChild(imgElement);
+                                }
+                            }
+
+                            chatBox.appendChild(messageElement);
+                        });
+
+                        if (isInitialLoad || isScrolledToBottom) {
+                            chatBox.scrollTop = chatBox.scrollHeight;
                         }
-
-                        chatBox.appendChild(messageElement);
-                    });
-
-                    if (isInitialLoad || isScrolledToBottom) {
-                        chatBox.scrollTop = chatBox.scrollHeight;
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error fetching messages:', error);
                     }
-                } catch (error) {
-                    console.error('Error fetching messages:', error);
-                }
+                });
             }
 
             /** 發送訊息函式（使用 GET 請求並切割訊息） */
@@ -479,38 +478,38 @@
                 for (let i = 0; i < totalChunks; i++) {
                     const chunk = messageChunks[i];
                     progressStatus.textContent = `正在傳送... [${i + 1}/${totalChunks}]`;
-                    
                     let success = false;
                     for (let attempt = 0; attempt < 5; attempt++) {
                         try {
-                            const url = new URL(APPS_SCRIPT_URL);
-                            url.searchParams.append('action', 'send');
-                            url.searchParams.append('groupID', currentGroup.GroupID);
-                            url.searchParams.append('user', user);
-                            url.searchParams.append('messageChunk', chunk);
-                            url.searchParams.append('chunkId', i);
-                            url.searchParams.append('totalChunks', totalChunks);
-                            if (tempRowId) {
-                                url.searchParams.append('tempRowId', tempRowId);
-                            }
-                            url.searchParams.append('type', type);
+                            const response = await $.ajax({
+                                url: APPS_SCRIPT_URL,
+                                type: 'GET',
+                                data: {
+                                    action: 'send',
+                                    groupID: currentGroup.GroupID,
+                                    user: user,
+                                    messageChunk: chunk,
+                                    chunkId: i,
+                                    totalChunks: totalChunks,
+                                    tempRowId: tempRowId,
+                                    type: type
+                                },
+                                dataType: 'jsonp'
+                            });
 
-                            const response = await fetch(url);
-                            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-                            const data = await response.json();
-
-                            if (data.status === 'success') {
-                                if (data.tempRowId) {
-                                    tempRowId = data.tempRowId;
+                            if (response.status === 'success') {
+                                if (response.tempRowId) {
+                                    tempRowId = response.tempRowId;
                                 }
                                 success = true;
                                 break; // 成功後跳出重試迴圈
                             } else {
-                                throw new Error(data.message || '傳送失敗！');
+                                throw new Error(response.message || '傳送失敗！');
                             }
                         } catch (error) {
                             console.error(`傳送分塊 ${i + 1} 失敗 (第 ${attempt + 1} 次重試):`, error);
                             if (attempt === 4) {
+                                // 替換 alert，因為在 iFrame 中無法顯示
                                 console.error('傳送失敗，請稍後再試。');
                                 isSending = false;
                                 return;
@@ -566,27 +565,29 @@
             });
 
             // 新增群組按鈕點擊事件
-            createGroupBtn.addEventListener('click', async () => {
+            createGroupBtn.addEventListener('click', () => {
                 const groupName = prompt('請輸入新群組名稱：');
                 if (groupName) {
-                    try {
-                        const url = new URL(APPS_SCRIPT_URL);
-                        url.searchParams.append('action', 'createGroup');
-                        url.searchParams.append('groupName', groupName);
-                        
-                        const response = await fetch(url);
-                        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-                        const data = await response.json();
-
-                        if (data.status === 'success') {
-                            console.log(`群組 "${data.groupName}" 已成功建立！`);
-                            fetchGroups();
-                        } else {
-                            console.error(data.message);
+                    $.ajax({
+                        url: APPS_SCRIPT_URL,
+                        type: 'GET',
+                        data: {
+                            action: 'createGroup',
+                            groupName: groupName
+                        },
+                        dataType: 'jsonp',
+                        success: function(response) {
+                            if (response.status === 'success') {
+                                console.log(`群組 "${response.groupName}" 已成功建立！`);
+                                fetchGroups();
+                            } else {
+                                console.error(response.message);
+                            }
+                        },
+                        error: function(xhr, status, error) {
+                            console.error('Error creating group:', error);
                         }
-                    } catch (error) {
-                        console.error('Error creating group:', error);
-                    }
+                    });
                 }
             });
 
