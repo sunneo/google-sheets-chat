@@ -166,3 +166,46 @@ body {
 #send-button:hover {
     background-color: #005a9e;
 }
+/* 新增：訊息時間戳記樣式 */
+.message-time {
+    display: block;
+    font-size: 0.8rem;
+    color: #777;
+    margin-top: 5px;
+    text-align: right;
+}
+
+/* 新增：日期分隔線樣式 */
+.date-header {
+    text-align: center;
+    font-size: 0.9rem;
+    color: #888;
+    margin: 20px 0 10px;
+    position: relative;
+}
+
+.date-header::before,
+.date-header::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    width: 35%;
+    height: 1px;
+    background-color: #ccc;
+}
+
+.date-header::before {
+    left: 0;
+}
+
+.date-header::after {
+    right: 0;
+}
+
+/* 新增：輸入區禁用時的樣式 */
+#input-area textarea:disabled,
+#input-area button:disabled {
+    cursor: not-allowed;
+    background-color: #e9ecef;
+    color: #888;
+}
