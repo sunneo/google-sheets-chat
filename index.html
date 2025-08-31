@@ -1,89 +1,210 @@
+<!-- 20250901 01:19 -->
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>聊天室</title>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Chat Room</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
         body {
-            font-family: 'Inter', sans-serif;
+            font-family: Arial, sans-serif;
             margin: 0;
             padding: 0;
-            background-color: #f0f2f5;
+            background-color: #f4f4f4;
             display: flex;
             height: 100vh;
-            overflow: hidden;
+        }
+        #group-sidebar {
+            width: 250px;
+            background-color: #333;
+            color: #fff;
+            padding: 20px;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+        #group-sidebar h2 {
+            margin-top: 0;
+            font-size: 1.5em;
+            border-bottom: 2px solid #555;
+            padding-bottom: 10px;
+        }
+        #group-list {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+            flex-grow: 1;
+        }
+        #group-list li {
+            padding: 10px;
+            cursor: pointer;
+            border-bottom: 1px solid #444;
+            transition: background-color 0.3s;
+        }
+        #group-list li.active {
+            background-color: #555;
+            font-weight: bold;
+        }
+        #group-list li:hover {
+            background-color: #444;
+        }
+        #create-group-btn {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px;
+            border: none;
+            cursor: pointer;
+            text-align: center;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+        #main-chat-container {
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+            background-color: #fff;
+            border-left: 1px solid #ddd;
+        }
+        #chat-header {
+            background-color: #eee;
+            padding: 20px;
+            text-align: center;
+            font-size: 1.2em;
+            font-weight: bold;
+            border-bottom: 1px solid #ddd;
+        }
+        #chat-box {
+            flex-grow: 1;
+            padding: 20px;
+            overflow-y: auto;
+            border-bottom: 1px solid #ddd;
+        }
+        .message {
+            background-color: #e9e9e9;
+            padding: 10px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            word-wrap: break-word;
+        }
+        .message strong {
+            color: #333;
+        }
+        .message-time {
+            font-size: 0.8em;
+            color: #777;
+            margin-left: 10px;
+        }
+        .date-header {
+            text-align: center;
+            margin: 20px 0;
+            color: #999;
+            font-size: 0.9em;
+            position: relative;
+        }
+        .date-header::before, .date-header::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            width: 40%;
+            height: 1px;
+            background: #ddd;
+        }
+        .date-header::before { left: 0; }
+        .date-header::after { right: 0; }
+
+        #input-container {
+            display: flex;
+            flex-direction: column;
+            padding: 10px;
+            background-color: #f4f4f4;
+            border-top: 1px solid #ddd;
+        }
+        #input-row {
+            display: flex;
+            align-items: center;
+            width: 100%;
+        }
+        #progress-status {
+            text-align: center;
+            color: #555;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+            visibility: hidden;
+        }
+        #username, #message {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin-right: 10px;
+        }
+        #username {
+            width: 100px;
+        }
+        #message {
+            flex-grow: 1;
+        }
+        #send-button, #add-image-button {
+            padding: 10px 20px;
+            border: none;
+            background-color: #007bff;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        #send-button:hover, #add-image-button:hover {
+            background-color: #0056b3;
+        }
+        #add-image-button {
+            background-color: #4CAF50;
+            margin-left: 10px;
         }
         pre {
-            background-color: #1e293b;
-            color: #e2e8f0;
-            padding: 1rem;
-            border-radius: 0.5rem;
+            background-color: #333;
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
             overflow-x: auto;
-            white-space: pre-wrap;
-            word-wrap: break-word;
+        }
+        .image-container {
+            max-width: 100%;
+            height: auto;
+            border-radius: 10px;
+            margin-top: 10px;
         }
     </style>
 </head>
 <body>
 
-    <!-- Main Container -->
-    <div class="flex h-screen w-full">
+    <div id="group-sidebar">
+        <h2>聊天室列表</h2>
+        <ul id="group-list">
+        </ul>
+        <button id="create-group-btn">新增群組</button>
+    </div>
 
-        <!-- Group Sidebar -->
-        <div class="w-1/4 min-w-[250px] bg-gray-900 text-gray-100 p-6 flex flex-col shadow-lg overflow-y-auto">
-            <h2 class="text-2xl font-bold mb-4 pb-2 border-b border-gray-700">聊天室列表</h2>
-            <ul id="group-list" class="list-none p-0 m-0 flex-grow">
-                <!-- Group items will be loaded here -->
-            </ul>
-            <button id="create-group-btn" class="mt-4 bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-full shadow-md transition-transform transform hover:scale-105">
-                新增群組
-            </button>
+    <div id="main-chat-container">
+        <div id="chat-header">
+            <span id="current-group-title"></span>
         </div>
-
-        <!-- Main Chat Container -->
-        <div class="flex-grow flex flex-col bg-white border-l border-gray-200">
-            <!-- Chat Header -->
-            <div id="chat-header" class="bg-white p-6 text-center text-xl font-bold border-b border-gray-200 shadow-sm rounded-t-lg">
-                <span id="current-group-title"></span>
-            </div>
-
-            <!-- Chat Box -->
-            <div id="chat-box" class="flex-grow p-6 overflow-y-auto">
-                <!-- Messages will be loaded here -->
-            </div>
-
-            <!-- Input Container -->
-            <div id="input-container" class="flex flex-col p-4 bg-gray-100 border-t border-gray-200">
-                <div id="progress-status" class="text-center text-sm text-gray-600 mb-2 invisible"></div>
-                <div id="input-row" class="flex items-center space-x-2">
-                    <input type="text" id="username" placeholder="你的名字" class="w-24 p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <input type="text" id="message" placeholder="輸入訊息..." class="flex-grow p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <button id="add-image-button" class="p-2 bg-green-500 hover:bg-green-600 text-white rounded-lg shadow transition-colors">圖片</button>
-                    <button id="send-button" class="p-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg shadow transition-colors">送出</button>
-                </div>
+        <div id="chat-box">
+            <!-- Messages will be loaded here -->
+        </div>
+        <div id="input-container">
+            <div id="progress-status"></div>
+            <div id="input-row">
+                <input type="text" id="username" placeholder="你的名字" required>
+                <input type="text" id="message" placeholder="輸入訊息..." required>
+                <button id="add-image-button">新增圖片</button>
+                <button id="send-button">送出</button>
             </div>
         </div>
     </div>
-
-    <!-- Hidden File Input for Image Upload -->
-    <input type="file" id="image-input" accept="image/*" class="hidden">
-
-    <!-- Custom Modal for Alert/Prompt -->
-    <div id="custom-modal-backdrop" class="fixed inset-0 bg-gray-900 bg-opacity-75 hidden items-center justify-center z-50">
-        <div class="bg-white rounded-xl shadow-2xl p-6 w-96 max-w-[90%] transform transition-all scale-95 duration-300 ease-out">
-            <h3 id="modal-title" class="text-lg font-bold mb-4"></h3>
-            <p id="modal-message" class="text-gray-700 mb-6"></p>
-            <input type="text" id="modal-input" class="w-full p-2 border border-gray-300 rounded-lg hidden">
-            <div id="modal-buttons" class="flex justify-end space-x-3">
-                <button id="modal-cancel" class="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400">取消</button>
-                <button id="modal-ok" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">確定</button>
-            </div>
-        </div>
-    </div>
+    
+    <!-- 隱藏的檔案選擇輸入框 -->
+    <input type="file" id="image-input" accept="image/*" style="display:none;">
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -101,77 +222,11 @@
             const currentGroupTitle = document.getElementById('current-group-title');
             const progressStatus = document.getElementById('progress-status');
 
-            const modalBackdrop = document.getElementById('custom-modal-backdrop');
-            const modalTitle = document.getElementById('modal-title');
-            const modalMessage = document.getElementById('modal-message');
-            const modalInput = document.getElementById('modal-input');
-            const modalOkBtn = document.getElementById('modal-ok');
-            const modalCancelBtn = document.getElementById('modal-cancel');
-
             let currentGroup = null;
             let lastDate = null;
             let fetchInterval = null;
             let isSending = false;
 
-            /** 自訂彈出訊息視窗 */
-            function showModalMessage(title, message) {
-                return new Promise(resolve => {
-                    modalTitle.textContent = title;
-                    modalMessage.textContent = message;
-                    modalInput.classList.add('hidden');
-                    modalCancelBtn.classList.add('hidden');
-                    modalBackdrop.classList.remove('hidden');
-                    modalBackdrop.classList.add('flex');
-
-                    const handleOk = () => {
-                        modalBackdrop.classList.add('hidden');
-                        modalBackdrop.classList.remove('flex');
-                        resolve();
-                        modalOkBtn.removeEventListener('click', handleOk);
-                    };
-                    modalOkBtn.addEventListener('click', handleOk);
-                });
-            }
-
-            /** 自訂彈出提示視窗 */
-            function showModalPrompt(title, message, placeholder = '') {
-                return new Promise(resolve => {
-                    modalTitle.textContent = title;
-                    modalMessage.textContent = message;
-                    modalInput.placeholder = placeholder;
-                    modalInput.value = '';
-                    modalInput.classList.remove('hidden');
-                    modalCancelBtn.classList.remove('hidden');
-                    modalBackdrop.classList.remove('hidden');
-                    modalBackdrop.classList.add('flex');
-
-                    const handleConfirm = () => {
-                        const value = modalInput.value;
-                        modalBackdrop.classList.add('hidden');
-                        modalBackdrop.classList.remove('flex');
-                        resolve(value);
-                        modalOkBtn.removeEventListener('click', handleConfirm);
-                        modalCancelBtn.removeEventListener('click', handleCancel);
-                    };
-
-                    const handleCancel = () => {
-                        modalBackdrop.classList.add('hidden');
-                        modalBackdrop.classList.remove('flex');
-                        resolve(null);
-                        modalOkBtn.removeEventListener('click', handleConfirm);
-                        modalCancelBtn.removeEventListener('click', handleCancel);
-                    };
-
-                    modalOkBtn.addEventListener('click', handleConfirm);
-                    modalCancelBtn.addEventListener('click', handleCancel);
-                    modalInput.addEventListener('keypress', (e) => {
-                        if (e.key === 'Enter') {
-                            handleConfirm();
-                        }
-                    });
-                });
-            }
-            
             /** 將字串中的HTML特殊字元轉換為實體，避免XSS攻擊 */
             function escapeHtml(unsafe) {
                 return unsafe
@@ -198,61 +253,61 @@
             }
 
             /** 獲取並顯示群組列表 */
-            async function fetchGroups() {
-                try {
-                    const params = new URLSearchParams({ action: 'getGroups' });
-                    const response = await fetch(`${APPS_SCRIPT_URL}?${params.toString()}`);
-                    const jsonpResponse = await response.text();
-                    const jsonpData = jsonpResponse.match(/callback\((.*)\)/s)[1];
-                    const data = JSON.parse(jsonpData);
-
-                    groupList.innerHTML = '';
-                    
-                    let pinnedGroup = null;
-                    const filteredGroups = data.groups.filter(group => {
-                        if (group.GroupID === '0') {
-                            pinnedGroup = group;
-                            return false;
+            function fetchGroups() {
+                $.ajax({
+                    url: APPS_SCRIPT_URL,
+                    type: 'GET',
+                    data: { action: 'getGroups' },
+                    dataType: 'jsonp',
+                    success: function(response) {
+                        groupList.innerHTML = '';
+                        
+                        let pinnedGroup = null;
+                        const filteredGroups = response.groups.filter(group => {
+                            if (group.GroupID === '0') {
+                                pinnedGroup = group;
+                                return false;
+                            }
+                            return true;
+                        });
+                        
+                        if (pinnedGroup) {
+                            currentGroup = pinnedGroup;
+                            currentGroupTitle.textContent = pinnedGroup.GroupName;
+                            messageInput.disabled = true;
+                            messageInput.placeholder = "此為置頂公告區，無法發送訊息";
+                            sendButton.disabled = true;
+                            addImageButton.disabled = true;
+                            selectGroup(pinnedGroup);
                         }
-                        return true;
-                    });
-                    
-                    if (pinnedGroup) {
-                        currentGroup = pinnedGroup;
-                        currentGroupTitle.textContent = pinnedGroup.GroupName;
-                        messageInput.disabled = true;
-                        messageInput.placeholder = "此為置頂公告區，無法發送訊息";
-                        sendButton.disabled = true;
-                        addImageButton.disabled = true;
-                        selectGroup(pinnedGroup);
-                    }
 
-                    filteredGroups.forEach(group => {
-                        const groupItem = document.createElement('li');
-                        groupItem.textContent = group.GroupName;
-                        groupItem.dataset.groupId = group.GroupID;
-                        groupItem.classList.add('px-4', 'py-2', 'cursor-pointer', 'border-b', 'border-gray-700', 'transition-colors', 'duration-300', 'hover:bg-gray-800', 'rounded-md');
-                        groupItem.addEventListener('click', () => selectGroup(group));
-                        groupList.appendChild(groupItem);
-                    });
-                    
-                    if (!currentGroup && filteredGroups.length > 0) {
-                        selectGroup(filteredGroups[0]);
-                    } else if (currentGroup && filteredGroups.length > 0) {
-                        const activeGroupElement = document.querySelector(`[data-group-id="${currentGroup.GroupID}"]`);
-                        if (activeGroupElement) {
-                            activeGroupElement.classList.add('bg-gray-700', 'font-semibold');
+                        filteredGroups.forEach(group => {
+                            const groupItem = document.createElement('li');
+                            groupItem.textContent = group.GroupName;
+                            groupItem.dataset.groupId = group.GroupID;
+                            groupItem.addEventListener('click', () => selectGroup(group));
+                            groupList.appendChild(groupItem);
+                        });
+                        
+                        if (!currentGroup && filteredGroups.length > 0) {
+                            selectGroup(filteredGroups[0]);
+                        } else if (currentGroup && filteredGroups.length > 0) {
+                            const activeGroupElement = document.querySelector(`[data-group-id="${currentGroup.GroupID}"]`);
+                            if (activeGroupElement) {
+                                activeGroupElement.classList.add('active');
+                            }
+                        } else if (!currentGroup) {
+                            const noGroupsMessage = document.createElement('li');
+                            noGroupsMessage.textContent = '沒有其他群組，請新增群組。';
+                            noGroupsMessage.style.textAlign = 'center';
+                            noGroupsMessage.style.padding = '15px';
+                            groupList.appendChild(noGroupsMessage);
                         }
-                    } else if (!currentGroup) {
-                        const noGroupsMessage = document.createElement('li');
-                        noGroupsMessage.textContent = '沒有其他群組，請新增群組。';
-                        noGroupsMessage.className = 'text-center text-gray-500 py-4';
-                        groupList.appendChild(noGroupsMessage);
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error fetching groups:', error);
                     }
-                } catch (error) {
-                    console.error('Error fetching groups:', error);
-                    showModalMessage('錯誤', '無法載入群組列表，請檢查網路連線。');
-                }
+                });
             }
 
             /** 選擇群組並載入訊息 */
@@ -271,10 +326,10 @@
                 
                 chatBox.innerHTML = '';
                 
-                document.querySelectorAll('#group-list li').forEach(item => item.classList.remove('bg-gray-700', 'font-semibold'));
+                document.querySelectorAll('#group-list li').forEach(item => item.classList.remove('active'));
                 const activeGroupElement = document.querySelector(`[data-group-id="${group.GroupID}"]`);
                 if (activeGroupElement) {
-                    activeGroupElement.classList.add('bg-gray-700', 'font-semibold');
+                    activeGroupElement.classList.add('active');
                 }
 
                 if (fetchInterval) {
@@ -286,108 +341,102 @@
             }
 
             /** 讀取訊息 */
-            async function fetchMessages(isInitialLoad) {
+            function fetchMessages(isInitialLoad) {
                 if (!currentGroup) return;
 
-                const isScrolledToBottom = chatBox.scrollHeight - chatBox.clientHeight <= chatBox.scrollTop + 50;
+                const isScrolledToBottom = chatBox.scrollHeight - chatBox.clientHeight <= chatBox.scrollTop + 1;
                 
-                try {
-                    const params = new URLSearchParams({
+                $.ajax({
+                    url: APPS_SCRIPT_URL,
+                    type: 'GET',
+                    data: { 
                         action: 'getMessages',
                         groupID: currentGroup.GroupID,
-                    });
-                    const response = await fetch(`${APPS_SCRIPT_URL}?${params.toString()}`);
-                    const jsonpResponse = await response.text();
-                    const jsonpData = jsonpResponse.match(/callback\((.*)\)/s)[1];
-                    const data = JSON.parse(jsonpData);
-
-                    if (!data.messages || data.messages.length === 0) {
-                        return;
-                    }
-
-                    chatBox.innerHTML = '';
-                    lastDate = null;
-                    
-                    data.messages.forEach(msg => {
-                        if (!msg.message && !msg.temp_message) return;
-                        
-                        const messageDate = new Date(msg.Timestamp);
-                        const currentDateString = messageDate.toDateString();
-
-                        if (lastDate && currentDateString !== lastDate) {
-                            const dateHeader = document.createElement('div');
-                            dateHeader.classList.add('relative', 'text-center', 'my-5', 'text-gray-400', 'text-sm');
-                            dateHeader.innerHTML = `<span class="bg-white px-3 relative z-10">${formatDateHeader(messageDate)}</span>`;
-                            dateHeader.style.setProperty('--before-after-width', '40%');
-                            dateHeader.style.setProperty('--before-after-bg', '#e2e8f0');
-                            chatBox.appendChild(dateHeader);
+                    },
+                    dataType: 'jsonp',
+                    success: function(response) {
+                        if (!response.messages || response.messages.length === 0) {
+                            return;
                         }
-                        lastDate = currentDateString;
 
-                        const messageElement = document.createElement('div');
-                        messageElement.classList.add('bg-gray-100', 'p-4', 'rounded-lg', 'mb-3', 'shadow-sm', 'break-words');
+                        chatBox.innerHTML = '';
+                        lastDate = null;
                         
-                        const messageContent = msg.message;
-                        const codeMatch = messageContent.match(/^`{3}([\s\S]*)`{3}$/);
-                        if (codeMatch) {
-                            const codeContent = escapeHtml(codeMatch[1].trim());
-                            messageElement.innerHTML = `
-                                <strong class="text-gray-800">${escapeHtml(msg.user)}:</strong>
-                                <pre><code>${codeContent}</code></pre>
-                                <span class="text-gray-500 text-xs mt-1 block">${formatMessageTime(msg.Timestamp)}</span>
-                            `;
-                        } else {
-                            messageElement.innerHTML = `
-                                <strong class="text-gray-800">${escapeHtml(msg.user)}:</strong> ${escapeHtml(messageContent)}
-                                <span class="text-gray-500 text-xs mt-1 block">${formatMessageTime(msg.Timestamp)}</span>
-                            `;
+                        response.messages.forEach(msg => {
+                            if (!msg.message && !msg.temp_message) return;
                             
-                            const imgurMatch = messageContent.match(/imgur\.com\/(.*?)(?:\.[a-zA-Z0-9]+)?$/i);
-                            if (imgurMatch) {
-                                const imgurUrl = `https://i.imgur.com/${imgurMatch[1]}.png`;
-                                const imgElement = document.createElement('img');
-                                imgElement.src = imgurUrl;
-                                imgElement.classList.add('max-w-full', 'h-auto', 'rounded-lg', 'mt-3');
-                                imgElement.onerror = function() {
-                                    this.onerror = null;
-                                    this.src = `https://imgur.com/${imgurMatch[1]}.jpeg`;
-                                };
-                                messageElement.appendChild(imgElement);
-                            }
-                        }
-                        // 處理圖片訊息
-                        if (msg.type === 'image') {
-                            const fullDataUrl = `${messageContent}`; // 假設圖片為 JPEG 格式
-                            const imgElement = document.createElement('img');
-                            imgElement.src = fullDataUrl;
-                            imgElement.alt = "Uploaded Image";
-                            imgElement.classList.add('max-w-full', 'h-auto', 'rounded-lg', 'mt-3');
-                            messageElement.appendChild(imgElement);
-                        }
-                        
-                        chatBox.appendChild(messageElement);
-                    });
+                            const messageDate = new Date(msg.Timestamp);
+                            const currentDateString = messageDate.toDateString();
 
-                    if (isInitialLoad || isScrolledToBottom) {
-                        chatBox.scrollTop = chatBox.scrollHeight;
+                            if (lastDate && currentDateString !== lastDate) {
+                                const dateHeader = document.createElement('div');
+                                dateHeader.classList.add('date-header');
+                                dateHeader.textContent = formatDateHeader(messageDate);
+                                chatBox.appendChild(dateHeader);
+                            }
+                            lastDate = currentDateString;
+
+                            const messageElement = document.createElement('div');
+                            messageElement.classList.add('message');
+                            
+                            const messageContent = msg.message;
+                            
+                            // 檢查是否為程式碼區塊
+                            const codeMatch = messageContent.match(/^`{3}([\s\S]*)`{3}$/);
+                            if (codeMatch) {
+                                const codeContent = escapeHtml(codeMatch[1].trim());
+                                messageElement.innerHTML = `
+                                    <strong>${escapeHtml(msg.user)}:</strong>
+                                    <pre><code style="white-space: pre-wrap;">${codeContent}</code></pre>
+                                    <span class="message-time">${formatMessageTime(msg.Timestamp)}</span>
+                                `;
+                            } else {
+                                // 先處理文字部分
+                                messageElement.innerHTML = `
+                                    <strong>${escapeHtml(msg.user)}:</strong> ${escapeHtml(messageContent)}
+                                    <span class="message-time">${formatMessageTime(msg.Timestamp)}</span>
+                                `;
+                                
+                                // 檢查是否包含 Imgur 網址並新增圖片
+                                const imgurMatch = messageContent.match(/imgur\.com\/(.*?)(?:\.[a-zA-Z0-9]+)?$/i);
+                                if (imgurMatch) {
+                                    const imgurUrl = `https://i.imgur.com/${imgurMatch[1]}.png`;
+                                    const imgElement = document.createElement('img');
+                                    imgElement.src = imgurUrl;
+                                    imgElement.classList.add('image-container');
+                                    imgElement.onerror = function() {
+                                        this.onerror = null;
+                                        this.src = `https://imgur.com/${imgurMatch[1]}.jpeg`;
+                                    };
+                                    messageElement.appendChild(imgElement);
+                                }
+                            }
+
+                            chatBox.appendChild(messageElement);
+                        });
+
+                        if (isInitialLoad || isScrolledToBottom) {
+                            chatBox.scrollTop = chatBox.scrollHeight;
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error fetching messages:', error);
                     }
-                } catch (error) {
-                    console.error('Error fetching messages:', error);
-                }
+                });
             }
 
-            /** 發送訊息函式 */
+            /** 發送訊息函式（使用 GET 請求並切割訊息） */
             async function sendMessage(message, type = 'text') {
                 if (isSending || sendButton.disabled) return;
                 
                 if (!currentGroup) {
-                    await showModalMessage('警告', '請先選擇一個群組！');
+                    console.log('請先選擇一個群組！'); 
                     return;
                 }
                 const user = usernameInput.value.trim();
 
                 if (!user || !message) {
-                    await showModalMessage('警告', '請輸入你的名字和訊息！');
+                    console.log('請輸入你的名字和訊息！');
                     return;
                 }
                 
@@ -399,12 +448,15 @@
                 }
                 const totalChunks = messageChunks.length;
 
-                progressStatus.style.visibility = 'visible';
-                usernameInput.disabled = true;
-                messageInput.disabled = true;
-                sendButton.disabled = true;
-                addImageButton.disabled = true;
-                
+                // 只有當需要分塊時才顯示進度
+                if (totalChunks > 1 || type === 'image') {
+                    progressStatus.style.visibility = 'visible';
+                    usernameInput.disabled = true;
+                    messageInput.disabled = true;
+                    sendButton.disabled = true;
+                    addImageButton.disabled = true;
+                }
+
                 let tempRowId = null;
 
                 for (let i = 0; i < totalChunks; i++) {
@@ -413,34 +465,35 @@
                     let success = false;
                     for (let attempt = 0; attempt < 5; attempt++) {
                         try {
-                            const params = new URLSearchParams({
-                                action: 'send',
-                                groupID: currentGroup.GroupID,
-                                user: user,
-                                messageChunk: chunk,
-                                chunkId: i,
-                                totalChunks: totalChunks,
-                                tempRowId: tempRowId,
-                                type: type
+                            const response = await $.ajax({
+                                url: APPS_SCRIPT_URL,
+                                type: 'GET',
+                                data: {
+                                    action: 'send',
+                                    groupID: currentGroup.GroupID,
+                                    user: user,
+                                    messageChunk: chunk,
+                                    chunkId: i,
+                                    totalChunks: totalChunks,
+                                    tempRowId: tempRowId,
+                                    type: type
+                                },
+                                dataType: 'jsonp'
                             });
-                            const response = await fetch(`${APPS_SCRIPT_URL}?${params.toString()}`);
-                            const jsonpResponse = await response.text();
-                            const jsonpData = jsonpResponse.match(/callback\((.*)\)/s)[1];
-                            const data = JSON.parse(jsonpData);
 
-                            if (data.status === 'success') {
-                                if (data.tempRowId) {
-                                    tempRowId = data.tempRowId;
+                            if (response.status === 'success') {
+                                if (response.tempRowId) {
+                                    tempRowId = response.tempRowId;
                                 }
                                 success = true;
-                                break;
+                                break; // 成功後跳出重試迴圈
                             } else {
-                                throw new Error(data.message || '傳送失敗！');
+                                throw new Error(response.message || '傳送失敗！');
                             }
                         } catch (error) {
                             console.error(`傳送分塊 ${i + 1} 失敗 (第 ${attempt + 1} 次重試):`, error);
                             if (attempt === 4) {
-                                await showModalMessage('錯誤', '傳送失敗，請稍後再試。');
+                                alert('傳送失敗，請稍後再試。');
                                 isSending = false;
                                 return;
                             }
@@ -469,61 +522,55 @@
             });
 
             // 處理圖片上傳
-            imageInput.addEventListener('change', async (event) => {
+            imageInput.addEventListener('change', (event) => {
                 const file = event.target.files[0];
                 if (!file) return;
 
-                // 檢查檔案大小，Apps Script GET 請求 URL 長度有限制
-                if (file.size > 8* 1024 * 1024) { // 限制為 8MB
-                    await showModalMessage('檔案過大', '圖片檔案大小超過 8MB，請選取較小的圖片。');
-                    return;
-                }
-
                 const reader = new FileReader();
-                reader.onload = async function(e) {
+                reader.onload = function(e) {
                     const base64Image = e.target.result.split(',')[1];
-                    await sendMessage(base64Image, 'image');
+                    sendMessage(base64Image, 'image');
                 };
                 reader.readAsDataURL(file);
             });
 
             // 送出按鈕點擊事件
-            sendButton.addEventListener('click', async () => {
-                await sendMessage(messageInput.value.trim());
+            sendButton.addEventListener('click', () => {
+                sendMessage(messageInput.value.trim());
             });
 
             // 鍵盤 Enter 鍵事件
-            messageInput.addEventListener('keypress', async (event) => {
+            messageInput.addEventListener('keypress', (event) => {
                 if (event.key === 'Enter') {
                     event.preventDefault();
-                    await sendMessage(messageInput.value.trim());
+                    sendMessage(messageInput.value.trim());
                 }
             });
 
             // 新增群組按鈕點擊事件
-            createGroupBtn.addEventListener('click', async () => {
-                const groupName = await showModalPrompt('新增群組', '請輸入新群組名稱：', '群組名稱');
+            createGroupBtn.addEventListener('click', () => {
+                const groupName = prompt('請輸入新群組名稱：');
                 if (groupName) {
-                    try {
-                        const params = new URLSearchParams({
+                    $.ajax({
+                        url: APPS_SCRIPT_URL,
+                        type: 'GET',
+                        data: {
                             action: 'createGroup',
                             groupName: groupName
-                        });
-                        const response = await fetch(`${APPS_SCRIPT_URL}?${params.toString()}`);
-                        const jsonpResponse = await response.text();
-                        const jsonpData = jsonpResponse.match(/callback\((.*)\)/s)[1];
-                        const data = JSON.parse(jsonpData);
-
-                        if (data.status === 'success') {
-                            await showModalMessage('成功', `群組 "${data.groupName}" 已成功建立！`);
-                            fetchGroups();
-                        } else {
-                            await showModalMessage('錯誤', data.message);
+                        },
+                        dataType: 'jsonp',
+                        success: function(response) {
+                            if (response.status === 'success') {
+                                alert(`群組 "${response.groupName}" 已成功建立！`);
+                                fetchGroups();
+                            } else {
+                                alert(response.message);
+                            }
+                        },
+                        error: function(xhr, status, error) {
+                            console.error('Error creating group:', error);
                         }
-                    } catch (error) {
-                        console.error('Error creating group:', error);
-                        await showModalMessage('錯誤', '建立群組時發生錯誤。');
-                    }
+                    });
                 }
             });
 
