@@ -1,33 +1,168 @@
+/* 基本樣式重設 */
 body {
-    font-family: Arial, sans-serif;
-    background-color: #f0f2f5;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background-color: #e5e5e5;
+    margin: 0;
+    padding: 0;
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100vh;
-    margin: 0;
+    min-height: 100vh;
 }
 
-.chat-container {
-    width: 100%;
-    max-width: 600px;
+#app-container {
+    display: flex;
+    width: 90%;
+    max-width: 1200px;
     height: 80vh;
-    background-color: #fff;
     border-radius: 8px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    background-color: #ffffff;
+}
+
+/* 左側邊欄 */
+#sidebar {
+    width: 250px;
+    background-color: #f3f2f1;
     display: flex;
     flex-direction: column;
-    padding: 20px;
-    box-sizing: border-box;
+    border-right: 1px solid #e0e0e0;
 }
 
-h1 {
-    text-align: center;
+#sidebar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+#sidebar-header h3 {
+    margin: 0;
+    font-size: 1.2rem;
     color: #333;
 }
 
-.chat-box {
-    flex-grow: 1;
-    border: 1px solid #ddd;
-    border-radius: 8px;
+#create-group-btn {
+    background-color: #0078d4;
+    color: white;
+    border: none;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    font-size: 1.5rem;
+    line-height: 1;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
 
+#create-group-btn:hover {
+    background-color: #005a9e;
+}
+
+#group-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    overflow-y: auto;
+}
+
+#group-list li {
+    padding: 15px;
+    cursor: pointer;
+    border-bottom: 1px solid #e0e0e0;
+    transition: background-color 0.2s;
+}
+
+#group-list li:hover {
+    background-color: #e0e0e0;
+}
+
+#group-list li.active {
+    background-color: #d1d1d1;
+    font-weight: bold;
+    border-left: 3px solid #0078d4;
+}
+
+/* 右側主聊天區 */
+#main-chat-area {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+#chat-header {
+    background-color: #f3f2f1;
+    padding: 15px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+#chat-header h3 {
+    margin: 0;
+    font-size: 1.2rem;
+    color: #333;
+}
+
+#chat-box {
+    flex-grow: 1;
+    padding: 20px;
+    overflow-y: auto;
+    background-color: #faf9f8;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* 訊息樣式 */
+.message {
+    padding: 10px 15px;
+    border-radius: 8px;
+    background-color: #e0e0e0;
+    max-width: 70%;
+    word-wrap: break-word;
+}
+
+/* 輸入區 */
+#input-area {
+    display: flex;
+    flex-direction: column;
+    padding: 15px;
+    background-color: #f3f2f1;
+    border-top: 1px solid #e0e0e0;
+    gap: 10px;
+}
+
+.input-field {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 1rem;
+    box-sizing: border-box;
+}
+
+#message {
+    width: 100%;
+    min-height: 50px;
+    resize: none;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 1rem;
+    box-sizing: border-box;
+}
+
+#send-button {
+    background-color: #0078d4;
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+#send-button:hover {
+    background-color: #005a9e;
+}

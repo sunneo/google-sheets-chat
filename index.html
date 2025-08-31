@@ -1,23 +1,42 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Google Sheets 聊天室</title>
+    <title>Teams 聊天室</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <link rel="stylesheet" href="style.css">
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="script.js"></script>
 </head>
 <body>
-    <div class="chat-container">
-        <h1>Google Sheets 聊天室</h1>
-        <div class="chat-box" id="chat-box">
+
+    <div id="app-container">
+        
+        <div id="sidebar">
+            <div id="sidebar-header">
+                <h3>群組</h3>
+                <button id="create-group-btn">+</button>
             </div>
-        <div class="input-container">
-            <input type="text" id="username" placeholder="你的名字" required>
-            <input type="text" id="message" placeholder="輸入訊息..." required>
-            <button id="send-button">送出</button>
+            <ul id="group-list">
+                </ul>
+        </div>
+
+        <div id="main-chat-area">
+            
+            <div id="chat-header">
+                <h3 id="current-group-title"></h3>
+            </div>
+            
+            <div id="chat-box">
+                </div>
+
+            <div id="input-area">
+                <input type="text" id="username" placeholder="你的名字" value="我" class="input-field">
+                <textarea id="message" placeholder="輸入訊息..."></textarea>
+                <button id="send-button">發送</button>
+            </div>
         </div>
     </div>
-    <script src="script.js"></script>
+
 </body>
 </html>
