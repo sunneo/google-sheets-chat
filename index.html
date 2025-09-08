@@ -415,7 +415,7 @@
             }
 
             /** 發送訊息函式（使用 GET 請求並切割訊息） */
-            async function sendMessage(message, type = 'text') {
+            async function sendMessage(message, type = 'text', action='Get') {
                 if (sendButton.disabled) return;
                 if (!currentGroup) {
                     // 使用自訂模態對話框或在UI中顯示訊息，不要使用alert
@@ -430,7 +430,10 @@
                     return;
                 }
                 
-                const chunkSize = 1000;
+                var chunkSize = 1000;
+		if (action == 'POST'){
+		    chunkSize=400000;
+		}
                 const messageChunks = [];
                 for (let i = 0; i < message.length; i += chunkSize) {
                     messageChunks.push(message.substring(i, i + chunkSize));
@@ -454,10 +457,7 @@
                     let success = false;
                     for (let attempt = 0; attempt < 5; attempt++) {
                         try {
-                            const response = await $.ajax({
-                                url: APPS_SCRIPT_URL,
-                                type: 'GET',
-                                data: {
+			    var ajaxData= {
                                     action: 'send',
                                     groupID: currentGroup.GroupID,
                                     user: user,
@@ -466,9 +466,20 @@
                                     totalChunks: totalChunks,
                                     tempRowId: tempRowId,
                                     type: type
-                                },
+                            };
+			    var ajaxParam={
+                                url: APPS_SCRIPT_URL,
+                                type: action,
+                                data: ajaxData,
                                 dataType: 'jsonp'
-                            });
+                            };
+			    if(action=='POST'){
+			       //ajaxData.redirect="follow";
+			       ajaxParam.contentType="text/plain;charset=utf-8";
+		               
+			    }
+
+                            const response = await $.ajax(ajaxParam);
 
                             if (response.status === 'success') {
                                 if (response.tempRowId) {
@@ -537,7 +548,7 @@
                 const reader = new FileReader();
                 reader.onloadend = () => {
                     const base64String = reader.result;
-                    sendMessage(base64String, 'image');
+                    sendMessage(base64String, 'image','GET');
                 };
                 reader.readAsDataURL(file);
             });
